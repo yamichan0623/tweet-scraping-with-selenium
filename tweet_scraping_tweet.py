@@ -19,7 +19,7 @@ options.add_experimental_option("detach", True)
 
 def main():
     preurl = "https://twitter.com" #You need to visit the site once to load the cookies.
-    target_url = 'https://twitter.com/shirakamifubuki/with_replies' #exampleURL
+    target_url = 'https://twitter.com/usadapekora/with_replies' #exampleURL
     driver = webdriver.Chrome(options=options)
     driver.get(preurl)
 
