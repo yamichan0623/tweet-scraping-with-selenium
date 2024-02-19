@@ -85,7 +85,7 @@ def profielFinder(driver):
     profiels['headerPhoto'] = f"https://twitter.com/{profiels['UserID']}/header_photo"
     profiels['avaterPhoto'] = f"https://twitter.com/{profiels['UserID']}/photo"
     
-    with open('result6.json', mode='wt', encoding='utf-8') as f:
+    with open('result.json', mode='wt', encoding='utf-8') as f:
         json.dump(profiels, f, ensure_ascii=False, indent=2)
 
            
