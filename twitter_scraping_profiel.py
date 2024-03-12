@@ -92,7 +92,7 @@ def profielFinder(driver):
             
 
         
-#正規表現のゴリ押しでhtmlからテキストと絵文字を取り出す.
+
 #絵文字がalt属性として記述されているから.textでは取得できない.
 def emojiHunter(text):
     text = re.findall(r'>[^<]+<|alt="[^"]+"',text)
