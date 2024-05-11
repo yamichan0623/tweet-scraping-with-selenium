@@ -8,20 +8,22 @@ from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
 import time
 from functools import wraps
-
+import urllib.request
+import os
 
 options = ChromeOptions()
-#options.add_argument("--headless")
 options.add_argument("--no-sandbox")
 options.add_argument('--lang=ja-JP')
+#options.add_argument("--headless")
 options.add_argument("--disable-blink-features=AutomationControlled")
 options.add_experimental_option("detach", True)
 
 def main():
     preurl = "https://twitter.com" #You need to visit the site once to load the cookies.
-    target_url = 'https://twitter.com/usadapekora/with_replies' #exampleURL
+    target_url = 'https://twitter.com/rasuko_okuma' #exampleURL
     driver = webdriver.Chrome(options=options)
     driver.get(preurl)
+    
 
     #Cookieの読み込み.
     json_open = open('ChromeCookie.txt', 'r')
@@ -33,7 +35,8 @@ def main():
 
     driver.get(target_url)
     time.sleep(6)
-    
+
+        
     while True: 
         tweetScraper(driver)
         driver.execute_script("window.scrollBy(0,window.innerHeight)")
@@ -57,6 +60,8 @@ IDs = []
 def tweetScraper(driver):
     tweets = driver.find_elements(By.CSS_SELECTOR, '[data-testid="tweet"]')
     tweet_with_all_attributes = {}
+
+    destDiectory = 'results/rasuko_okuma2/'
 
     for tweet in tweets:
         #1つのツイートに対しての処理.
@@ -96,8 +101,8 @@ def tweetScraper(driver):
         top_right = tweet.find_element(By.CSS_SELECTOR,'[data-testid="Tweet-User-Avatar"]')
 
         tweetUserLink = top_right.find_element(By.CSS_SELECTOR,'a').get_attribute('href')
-        tweetUserLink = 'https://twitter.com' + tweetUserLink
-
+        userID = re.search(r'(?<=/)([^/]+$)',tweetUserLink).group(0)
+        
         tweetUserAvatar = top_right.find_element(By.CSS_SELECTOR,'img').get_attribute('src')
 
         top_left = tweet.find_element(By.CSS_SELECTOR,'[data-testid="User-Name"]')
@@ -128,21 +133,61 @@ def tweetScraper(driver):
         if tweetID not in IDs:
             tweet_with_all_attributes[tweetID] = { "socialcontext" : social_context, "tweetUser" : { "link" : tweetUserLink, "AvatarPhoto" : tweetUserAvatar}, "tweetDate" : tweetDate, "tweet" : tweet_texts, "attachedURL" : attached_url, "tweetPhoto" : tweetPhoto, "videoThumnail" : video_thumbnail, "impressions" : impressions }
             IDs.append(tweetID)
+            print(f'　　{tweetID}を追加しました')
 
-    with open(f'results/result{tweetScraper.count}.json', mode='wt', encoding='utf-8') as f:
+            
+            if(tweetPhoto):
+                for n,x in enumerate(tweetPhoto):
+                    try:
+                        photoName = f'{tweetID}-{n}-@{userID}-[{tweet_texts[0][0:40].replace("/","／")}...].png'
+                    except: 
+                        photoName = f'{tweetID}-{n}-@{userID}-[nulltext].png'
+
+                    dest = destDiectory + 'photo/'
+                    
+                    if not os.path.exists(dest):
+                        os.makedirs(dest)
+
+                    destPathPhoto = dest + photoName
+                    image_downloader(x,destPathPhoto,n,tweetID)
+
+                  
+
+
+
+    jsonName = f'result{tweetScraper.count}.json'    
+    destPathJson = destDiectory + 'json/'
+    #destDiectoryは最後に/付き.--最後の'/'を忘れないこと.
+    if not os.path.exists(destPathJson):
+        os.makedirs(destPathJson)
+
+    destPathJson = destPathJson + jsonName
+    
+
+    with open(destPathJson, mode='wt', encoding='utf-8') as f:
         json.dump(tweet_with_all_attributes, f, ensure_ascii=False, indent=2)
 
-    '''   
-    driver.execute_script(f"window.scrollBy(0,window.innerHeight/2)")
 
 
-    target = tweets[-2]
-    n = int(target.location['y'])
-    driver.execute_script(f"window.scrollTo(0,{n})")
+def  image_downloader(url,path,n,tweetID,max_retries=10):
+    retry_count = 0
+    while retry_count < max_retries:
+        try:
+            urllib.request.urlretrieve(url, path)
+            print(f"Downloaded {tweetID}-{n} successfully.")
+            return True
+        
+        except Exception as e:
+            print(f"Error downloading {tweetID}-{n}: {e}")
+            retry_count += 1
+            print(f"Retrying... ({retry_count}/{max_retries})")
+            time.sleep(1)  
+    print(f"Max retries reached for {tweetID}-{n}. Skipping...")
+    return False
+
+
 
     
-    time.sleep(5)
-    ''' 
 
         
     
